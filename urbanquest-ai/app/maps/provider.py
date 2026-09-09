@@ -11,6 +11,7 @@ class MapsProvider(ABC):
         longitude: float,
         radius: int,
         category: str,
+        city: str,
     ) -> list[Place]:
         raise NotImplementedError
 

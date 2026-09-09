@@ -29,6 +29,22 @@ class PlannerTests(unittest.TestCase):
         self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
         self.assertEqual(response.plan.currency, "INR")
 
+    def test_demo_plan_uses_selected_destination(self) -> None:
+        service = ChatService(AdventurePlanner(DemoMapsProvider()))
+        context = TravelerContext(
+            home=Location(country="Japan", city="Tokyo"),
+            destination=Location(country="USA", city="San Francisco"),
+            home_currency="JPY",
+            destination_currency="USD",
+            budget_home=10000,
+            budget_destination=63,
+            available_minutes=180,
+        )
+
+        response = asyncio.run(service.respond("Find something historic", context))
+
+        self.assertIn("San Francisco", response.plan.stops[0].name)
+
 
 if __name__ == "__main__":
     unittest.main()

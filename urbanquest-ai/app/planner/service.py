@@ -22,6 +22,7 @@ class AdventurePlanner:
             longitude=context.destination.longitude,
             radius=5000,
             category=intent.category,
+            city=context.destination.city,
         )
         ranked = sorted(
             places,

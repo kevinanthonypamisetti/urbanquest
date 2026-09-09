@@ -61,8 +61,24 @@ class DemoMapsProvider(MapsProvider):
         longitude: float,
         radius: int,
         category: str,
+        city: str,
     ) -> list[Place]:
         del latitude, longitude, radius
+        if city.lower() != "hyderabad":
+            return [
+                Place(
+                    name=f"{city} {category.title()} Walk",
+                    description=f"A locally minded {category} route through {city}.",
+                    latitude=0,
+                    longitude=0,
+                    category=category,
+                    estimated_cost=0,
+                    duration_minutes=45,
+                    rating=4.2,
+                    novelty=0.7,
+                    distance_km=1.2,
+                )
+            ]
         matches = [place for place in DEMO_PLACES if place.category == category]
         return matches or DEMO_PLACES
 
