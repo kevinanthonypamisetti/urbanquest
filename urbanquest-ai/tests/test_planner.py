@@ -1,0 +1,34 @@
+import asyncio
+import unittest
+
+from app.chat.service import ChatService
+from app.maps.demo import DemoMapsProvider
+from app.planner.models import Location, TravelerContext
+from app.planner.service import AdventurePlanner
+
+
+class PlannerTests(unittest.TestCase):
+    def test_chat_creates_budgeted_historical_plan(self) -> None:
+        service = ChatService(AdventurePlanner(DemoMapsProvider()))
+        context = TravelerContext(
+            home=Location(country="USA", city="San Francisco"),
+            destination=Location(country="India", city="Hyderabad"),
+            home_currency="USD",
+            destination_currency="INR",
+            budget_home=40,
+            budget_destination=3480,
+            available_minutes=180,
+        )
+
+        response = asyncio.run(
+            service.respond("Plan a cheap historical adventure for 3 hours", context)
+        )
+
+        self.assertTrue(response.plan.stops)
+        self.assertLessEqual(response.plan.estimated_cost, context.budget_destination)
+        self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
+        self.assertEqual(response.plan.currency, "INR")
+
+
+if __name__ == "__main__":
+    unittest.main()
