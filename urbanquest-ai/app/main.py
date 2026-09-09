@@ -24,7 +24,7 @@ chat_service = ChatService(
 )
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root() -> dict[str, str]:
     return {
         "service": settings.app_name,
@@ -34,7 +34,7 @@ async def root() -> dict[str, str]:
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
