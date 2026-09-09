@@ -13,7 +13,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The service exposes `GET /health` and `POST /chat`. The demo maps provider is
+The service exposes `GET /`, `GET /health`, and `POST /chat`. The demo maps provider is
 deliberately deterministic so the service can run without external API keys.
 
 ## Deployment walkthrough
