@@ -45,6 +45,12 @@ class BudgetBreakdown(BaseModel):
     currency: str
 
 
+class ItineraryDay(BaseModel):
+    day: int
+    title: str
+    activities: list[AdventureStop]
+
+
 class AdventurePlan(BaseModel):
     title: str
     description: str
@@ -53,5 +59,6 @@ class AdventurePlan(BaseModel):
     estimated_cost: float
     currency: str
     stops: list[AdventureStop]
+    days: list[ItineraryDay]
     budget: list[BudgetBreakdown]
     reasoning: str

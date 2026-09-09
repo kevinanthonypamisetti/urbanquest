@@ -38,12 +38,15 @@ class ChatService:
             "culture",
         )
 
-        duration_match = re.search(r"(\d+(?:\.\d+)?)\s*(hour|hours|hr|hrs)", normalized)
-        duration_minutes = (
-            int(float(duration_match.group(1)) * 60)
-            if duration_match
-            else None
+        duration_match = re.search(
+            r"(\d+(?:\.\d+)?)\s*(day|days|hour|hours|hr|hrs)", normalized
         )
+        duration_minutes = None
+        if duration_match:
+            value = float(duration_match.group(1))
+            duration_minutes = int(
+                value * (1440 if "day" in duration_match.group(2) else 60)
+            )
 
         return PlannerIntent(
             category=category,

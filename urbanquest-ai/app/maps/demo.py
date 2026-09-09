@@ -80,7 +80,8 @@ class DemoMapsProvider(MapsProvider):
                 )
             ]
         matches = [place for place in DEMO_PLACES if place.category == category]
-        return matches or DEMO_PLACES
+        related = [place for place in DEMO_PLACES if place.category != category]
+        return matches + related
 
     async def route(
         self,

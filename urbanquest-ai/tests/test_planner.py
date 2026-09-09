@@ -28,6 +28,7 @@ class PlannerTests(unittest.TestCase):
         self.assertLessEqual(response.plan.estimated_cost, context.budget_destination)
         self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
         self.assertEqual(response.plan.currency, "INR")
+        self.assertEqual(len(response.plan.days), 1)
 
     def test_demo_plan_uses_selected_destination(self) -> None:
         service = ChatService(AdventurePlanner(DemoMapsProvider()))
@@ -44,6 +45,23 @@ class PlannerTests(unittest.TestCase):
         response = asyncio.run(service.respond("Find something historic", context))
 
         self.assertIn("San Francisco", response.plan.stops[0].name)
+
+    def test_multi_day_request_returns_day_by_day_itinerary(self) -> None:
+        service = ChatService(AdventurePlanner(DemoMapsProvider()))
+        context = TravelerContext(
+            home=Location(country="USA", city="San Francisco"),
+            destination=Location(country="India", city="Hyderabad"),
+            home_currency="USD",
+            destination_currency="INR",
+            budget_home=400,
+            budget_destination=34800,
+            available_minutes=3 * 1440,
+        )
+
+        response = asyncio.run(service.respond("Plan a 3 day historic trip", context))
+
+        self.assertEqual(len(response.plan.days), 3)
+        self.assertGreaterEqual(len(response.plan.days[0].activities), 2)
 
 
 if __name__ == "__main__":

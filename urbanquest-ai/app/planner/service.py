@@ -30,10 +30,12 @@ class AdventurePlanner:
             reverse=True,
         )[: self.max_candidates]
 
-        max_minutes = min(
+        requested_minutes = min(
             context.available_minutes,
             intent.duration_minutes or context.available_minutes,
         )
+        days_count = max(1, (requested_minutes + 1439) // 1440)
+        max_minutes = min(requested_minutes, 1440)
         stops: list[AdventureStop] = []
         elapsed = 0
         for place in ranked:
@@ -78,6 +80,18 @@ class AdventurePlanner:
             for place in ranked
             if any(stop.name == place.name for stop in stops)
         )
+        days = [
+            {
+                "day": day,
+                "title": (
+                    "Arrival and first impressions"
+                    if day == 1
+                    else "Local discoveries and slow travel"
+                ),
+                "activities": stops if day == 1 else [],
+            }
+            for day in range(1, days_count + 1)
+        ]
         return AdventurePlan(
             title=f"{context.destination.city}: {intent.category.title()} field notes",
             description=(
@@ -89,6 +103,7 @@ class AdventurePlanner:
             estimated_cost=round(estimated_cost, 2),
             currency=context.destination_currency,
             stops=stops,
+            days=days,
             budget=[
                 BudgetBreakdown(
                     category="Experiences",
