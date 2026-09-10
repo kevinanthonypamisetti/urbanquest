@@ -42,7 +42,7 @@ export function getBookingOptions({ origin, destination, departure, returnDate, 
     activities: providers.activities.map(({ provider, baseUrl }) => ({
       provider,
       label: `Explore ${provider}`,
-      url: queryUrl(baseUrl, { q: `${destination} activities` }),
+      url: queryUrl(baseUrl, { ...dates, q: `${destination} activities` }),
     })),
   }
 }
