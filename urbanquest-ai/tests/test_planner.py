@@ -29,6 +29,7 @@ class PlannerTests(unittest.TestCase):
         self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
         self.assertEqual(response.plan.currency, "INR")
         self.assertEqual(len(response.plan.days), 1)
+        self.assertEqual(response.plan.days[0].date, None)
         self.assertEqual(response.plan.trip_dna.culture, 85)
         self.assertIn("Hyderabad", response.plan.experience_bundle.title)
 
@@ -58,12 +59,19 @@ class PlannerTests(unittest.TestCase):
             budget_home=400,
             budget_destination=34800,
             available_minutes=3 * 1440,
+            departure_date="2026-10-20",
+            return_date="2026-10-22",
         )
 
         response = asyncio.run(service.respond("Plan a 3 day historic trip", context))
 
         self.assertEqual(len(response.plan.days), 3)
         self.assertGreaterEqual(len(response.plan.days[0].activities), 2)
+        self.assertEqual(
+            [day.date for day in response.plan.days],
+            ["2026-10-20", "2026-10-21", "2026-10-22"],
+        )
+        self.assertTrue(all(day.activities for day in response.plan.days))
 
 
 if __name__ == "__main__":

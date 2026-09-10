@@ -23,6 +23,9 @@ class TravelerContext(BaseModel):
     available_minutes: int = Field(gt=0)
     interests: list[str] = Field(default_factory=list)
     transport_mode: str = "walking"
+    departure_date: Optional[str] = None
+    return_date: Optional[str] = None
+    travelers: int = Field(default=1, gt=0)
 
 
 class PlannerIntent(BaseModel):
@@ -49,6 +52,7 @@ class BudgetBreakdown(BaseModel):
 
 class ItineraryDay(BaseModel):
     day: int
+    date: Optional[str] = None
     title: str
     activities: list[AdventureStop]
 

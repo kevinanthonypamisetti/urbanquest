@@ -81,18 +81,37 @@ class AdventurePlanner:
             for place in ranked
             if any(stop.name == place.name for stop in stops)
         )
-        days = [
-            {
-                "day": day,
-                "title": (
-                    "Arrival and first impressions"
-                    if day == 1
-                    else "Local discoveries and slow travel"
-                ),
-                "activities": stops if day == 1 else [],
-            }
-            for day in range(1, days_count + 1)
-        ]
+        bundle_nodes = build_experience_bundle(context, intent).experiences
+        days = []
+        for day in range(1, days_count + 1):
+            day_activities = [
+                AdventureStop(
+                    name=node.name,
+                    description=node.description,
+                    latitude=0,
+                    longitude=0,
+                    duration_minutes=node.duration_minutes,
+                    estimated_cost=node.estimated_cost,
+                )
+                for node in bundle_nodes[(day - 1) % len(bundle_nodes) :: days_count]
+            ]
+            if not day_activities:
+                day_activities = [stops[(day - 1) % len(stops)]] if stops else []
+            day_date = None
+            if context.departure_date:
+                from datetime import date, timedelta
+
+                day_date = (
+                    date.fromisoformat(context.departure_date) + timedelta(days=day - 1)
+                ).isoformat()
+            days.append(
+                {
+                    "day": day,
+                    "date": day_date,
+                    "title": f"{context.destination.city} day {day}: {intent.category.title()} discoveries",
+                    "activities": day_activities,
+                }
+            )
         return AdventurePlan(
             title=f"{context.destination.city}: {intent.category.title()} field notes",
             description=(
