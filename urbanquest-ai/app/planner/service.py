@@ -1,4 +1,5 @@
 from app.maps.provider import MapsProvider
+from app.experience.engine import build_experience_bundle, build_trip_dna
 from app.planner.models import (
     AdventurePlan,
     AdventureStop,
@@ -122,4 +123,6 @@ class AdventurePlanner:
                 "Places were filtered to the available time and destination budget, "
                 "then ranked by interest fit, distance, price, rating, and novelty."
             ),
+            trip_dna=build_trip_dna(context, intent),
+            experience_bundle=build_experience_bundle(context, intent),
         )

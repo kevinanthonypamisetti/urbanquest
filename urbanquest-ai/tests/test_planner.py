@@ -29,6 +29,8 @@ class PlannerTests(unittest.TestCase):
         self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
         self.assertEqual(response.plan.currency, "INR")
         self.assertEqual(len(response.plan.days), 1)
+        self.assertEqual(response.plan.trip_dna.culture, 85)
+        self.assertIn("Hyderabad", response.plan.experience_bundle.title)
 
     def test_demo_plan_uses_selected_destination(self) -> None:
         service = ChatService(AdventurePlanner(DemoMapsProvider()))

@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from app.experience.models import ExperienceBundle, TripDNA
+
 
 class Location(BaseModel):
     country: str
@@ -62,3 +64,5 @@ class AdventurePlan(BaseModel):
     days: list[ItineraryDay]
     budget: list[BudgetBreakdown]
     reasoning: str
+    trip_dna: TripDNA
+    experience_bundle: ExperienceBundle
