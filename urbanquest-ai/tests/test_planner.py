@@ -76,6 +76,11 @@ class PlannerTests(unittest.TestCase):
         )
         self.assertTrue(all(day.activities for day in response.plan.days))
         self.assertEqual(
+            [meal.meal for meal in response.plan.days[0].meals],
+            ["Breakfast", "Lunch", "Dinner"],
+        )
+        self.assertTrue(all(meal.name for meal in response.plan.days[0].meals))
+        self.assertEqual(
             [experience.name for experience in response.plan.experience_bundle.experiences],
             [stop.name for stop in response.plan.stops],
         )

@@ -45,6 +45,17 @@ class AdventureStop(BaseModel):
     estimated_cost: float
 
 
+class MealRecommendation(BaseModel):
+    meal: str
+    suggested_time: str
+    place_query: str
+    name: str
+    description: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    estimated_cost: float = Field(ge=0)
+
+
 class BudgetBreakdown(BaseModel):
     category: str
     amount: float = Field(ge=0)
@@ -56,6 +67,7 @@ class ItineraryDay(BaseModel):
     date: Optional[str] = None
     title: str
     activities: list[AdventureStop]
+    meals: list[MealRecommendation] = Field(default_factory=list)
 
 
 class AdventurePlan(BaseModel):

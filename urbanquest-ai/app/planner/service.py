@@ -4,6 +4,7 @@ from app.planner.models import (
     AdventurePlan,
     AdventureStop,
     BudgetBreakdown,
+    MealRecommendation,
     PlannerIntent,
     TravelerContext,
 )
@@ -30,6 +31,13 @@ class AdventurePlanner:
             key=lambda place: score_place(place, context, intent),
             reverse=True,
         )[: self.max_candidates]
+        food_places = await self.maps.nearby_places(
+            latitude=context.destination.latitude,
+            longitude=context.destination.longitude,
+            radius=5000,
+            category="food",
+            city=context.destination.city,
+        )
 
         requested_minutes = min(
             context.available_minutes,
@@ -97,6 +105,7 @@ class AdventurePlanner:
                 )
                 distance += route.distance_km
         days = []
+        meal_slots = (("Breakfast", "08:00"), ("Lunch", "13:00"), ("Dinner", "19:00"))
         for day in range(1, days_count + 1):
             day_activities = stops[(day - 1) :: days_count]
             if not day_activities:
@@ -108,14 +117,34 @@ class AdventurePlanner:
                 day_date = (
                     date.fromisoformat(context.departure_date) + timedelta(days=day - 1)
                 ).isoformat()
+            meals = [
+                MealRecommendation(
+                    meal=meal_name,
+                    suggested_time=time,
+                    place_query=place.place_query,
+                    name=place.name,
+                    description=place.description,
+                    latitude=place.latitude,
+                    longitude=place.longitude,
+                    estimated_cost=place.estimated_cost,
+                )
+                for (meal_name, time), place in zip(
+                    meal_slots, food_places * 3
+                )
+            ]
             days.append(
                 {
                     "day": day,
                     "date": day_date,
                     "title": f"{context.destination.city} day {day}: {intent.category.title()} discoveries",
                     "activities": day_activities,
+                    "meals": meals,
                 }
             )
+        meal_cost = sum(
+            meal.estimated_cost for day in days for meal in day["meals"]
+        )
+        estimated_cost += meal_cost
         return AdventurePlan(
             title=f"{context.destination.city}: {intent.category.title()} field notes",
             description=(
@@ -131,7 +160,15 @@ class AdventurePlanner:
             budget=[
                 BudgetBreakdown(
                     category="Experiences",
-                    amount=round(estimated_cost, 2),
+                    amount=round(estimated_cost - meal_cost, 2),
+                    currency=context.destination_currency,
+                ),
+                BudgetBreakdown(
+                    category="Meals",
+                    amount=round(
+                        sum(meal.estimated_cost for day in days for meal in day["meals"]),
+                        2,
+                    ),
                     currency=context.destination_currency,
                 ),
                 BudgetBreakdown(
