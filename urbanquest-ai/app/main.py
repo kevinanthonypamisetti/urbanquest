@@ -5,6 +5,7 @@ from app.chat.models import ChatRequest, ChatResponse
 from app.chat.service import ChatService
 from app.config import get_settings
 from app.maps.demo import DemoMapsProvider
+from app.maps.google import GoogleMapsProvider
 from app.planner.service import AdventurePlanner
 
 settings = get_settings()
@@ -16,12 +17,12 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
-chat_service = ChatService(
-    AdventurePlanner(
-        maps_provider=DemoMapsProvider(),
-        max_candidates=settings.max_candidates,
-    )
+maps_provider = (
+    GoogleMapsProvider(settings.google_maps_api_key)
+    if settings.maps_provider.lower() == "google" and settings.google_maps_api_key
+    else DemoMapsProvider()
 )
+chat_service = ChatService(AdventurePlanner(maps_provider=maps_provider, max_candidates=settings.max_candidates))
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

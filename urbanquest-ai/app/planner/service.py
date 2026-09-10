@@ -49,6 +49,7 @@ class AdventurePlanner:
                 continue
             stops.append(
                 AdventureStop(
+                    place_query=place.place_query,
                     name=place.name,
                     description=place.description,
                     latitude=place.latitude,
@@ -63,6 +64,7 @@ class AdventurePlanner:
             place = ranked[0]
             stops.append(
                 AdventureStop(
+                    place_query=place.place_query,
                     name=place.name,
                     description=place.description,
                     latitude=place.latitude,
@@ -81,20 +83,22 @@ class AdventurePlanner:
             for place in ranked
             if any(stop.name == place.name for stop in stops)
         )
-        bundle_nodes = build_experience_bundle(context, intent).experiences
+        for origin, destination in zip(stops, stops[1:]):
+            if (
+                origin.latitude is not None
+                and origin.longitude is not None
+                and destination.latitude is not None
+                and destination.longitude is not None
+            ):
+                route = await self.maps.route(
+                    (origin.latitude, origin.longitude),
+                    (destination.latitude, destination.longitude),
+                    context.transport_mode,
+                )
+                distance += route.distance_km
         days = []
         for day in range(1, days_count + 1):
-            day_activities = [
-                AdventureStop(
-                    name=node.name,
-                    description=node.description,
-                    latitude=0,
-                    longitude=0,
-                    duration_minutes=node.duration_minutes,
-                    estimated_cost=node.estimated_cost,
-                )
-                for node in bundle_nodes[(day - 1) % len(bundle_nodes) :: days_count]
-            ]
+            day_activities = stops[(day - 1) :: days_count]
             if not day_activities:
                 day_activities = [stops[(day - 1) % len(stops)]] if stops else []
             day_date = None
@@ -143,5 +147,5 @@ class AdventurePlanner:
                 "then ranked by interest fit, distance, price, rating, and novelty."
             ),
             trip_dna=build_trip_dna(context, intent),
-            experience_bundle=build_experience_bundle(context, intent),
+            experience_bundle=build_experience_bundle(context, intent, stops),
         )

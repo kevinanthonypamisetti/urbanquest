@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "UrbanQuest AI"
     maps_provider: str = "demo"
+    google_maps_api_key: Optional[str] = None
     max_candidates: int = 8
     cors_origins: str = "http://localhost:5173"
 

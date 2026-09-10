@@ -1,5 +1,5 @@
 from app.experience.models import ExperienceBundle, ExperienceNode, TripDNA
-from app.planner.models import PlannerIntent, TravelerContext
+from app.planner.models import AdventureStop, PlannerIntent, TravelerContext
 
 
 def build_trip_dna(context: TravelerContext, intent: PlannerIntent) -> TripDNA:
@@ -19,45 +19,27 @@ def build_trip_dna(context: TravelerContext, intent: PlannerIntent) -> TripDNA:
 
 
 def build_experience_bundle(
-    context: TravelerContext, intent: PlannerIntent
+    context: TravelerContext,
+    intent: PlannerIntent,
+    stops: list[AdventureStop],
 ) -> ExperienceBundle:
     city = context.destination.city
     nodes = [
         ExperienceNode(
-            name=f"Sunrise {city} walk",
-            description="Start quietly, find a viewpoint, and let the city wake up.",
-            tags=["adventure", "photography", "quiet"],
-            duration_minutes=50,
-            estimated_cost=0,
-            distance_km=1.2,
-        ),
-        ExperienceNode(
-            name=f"Local breakfast in {city}",
-            description="A neighborhood breakfast chosen for local flavor rather than tourist traffic.",
-            tags=["food", "local", "culture"],
-            duration_minutes=45,
-            estimated_cost=180,
-            distance_km=0.8,
-        ),
-        ExperienceNode(
-            name=f"Hidden {intent.category} trail",
-            description="A flexible route connecting smaller places with time to linger.",
+            name=stop.name,
+            description=stop.description,
             tags=[intent.category, "local", "discovery"],
-            duration_minutes=75,
-            estimated_cost=250,
-            distance_km=2.1,
-        ),
-        ExperienceNode(
-            name=f"Golden-hour gathering in {city}",
-            description="End the day with a view, a shared plate, and an unhurried route home.",
-            tags=["food", "relaxation", "sunset"],
-            duration_minutes=90,
-            estimated_cost=450,
-            distance_km=1.5,
-        ),
+            duration_minutes=stop.duration_minutes,
+            estimated_cost=stop.estimated_cost,
+            distance_km=0,
+        )
+        for stop in stops
     ]
     return ExperienceBundle(
         title=f"{city} through your Trip DNA",
-        description="A connected sequence of moments, not a checklist of attractions.",
+        description=(
+            f"{len(nodes)} real itinerary stops selected for your "
+            f"{intent.category} preferences."
+        ),
         experiences=nodes,
     )

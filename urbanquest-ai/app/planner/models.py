@@ -36,10 +36,11 @@ class PlannerIntent(BaseModel):
 
 
 class AdventureStop(BaseModel):
+    place_query: str
     name: str
     description: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     duration_minutes: int
     estimated_cost: float
 

@@ -55,7 +55,22 @@ function TripDNA({ dna }) {
 
 function DayMap({ day, destination, origin }) {
   const stops = day.activities
-  return <section className="day-map"><div className="map-header"><span className="eyebrow">Route preview</span><strong>Day {day.day}{day.date ? ` · ${formatTripDate(day.date)}` : ''} · {destination}</strong></div><div className="map-canvas">{stops.length ? <><div className="map-plot" aria-label={`Route through ${stops.length} stops`}>{stops.map((stop, index) => <span className="map-marker" style={{ left: `${15 + (index * 70) / Math.max(stops.length - 1, 1)}%`, top: `${35 + (index % 2) * 28}%` }} title={stop.name} key={`${stop.name}-${index}`}>{index + 1}</span>)}</div><div className="map-route">{stops.map((stop, index) => <div className="map-stop" key={`${stop.name}-${index}`}><span>{index === 0 ? '✈' : '●'}</span><strong>{stop.name}</strong></div>)}</div></> : <p className="map-empty">No activities were returned for this day.</p>}<small>{origin} → {destination} · {stops.length} stops</small></div></section>
+  const latitudes = stops.map((stop) => stop.latitude).filter((value) => Number.isFinite(value))
+  const longitudes = stops.map((stop) => stop.longitude).filter((value) => Number.isFinite(value))
+  const minLat = Math.min(...latitudes)
+  const maxLat = Math.max(...latitudes)
+  const minLng = Math.min(...longitudes)
+  const maxLng = Math.max(...longitudes)
+  const positionFor = (stop, index) => {
+    if (!Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude) || !latitudes.length) {
+      return { left: `${15 + (index * 70) / Math.max(stops.length - 1, 1)}%`, top: `${35 + (index % 2) * 28}%` }
+    }
+    return {
+      left: `${15 + ((stop.longitude - minLng) / Math.max(maxLng - minLng, 0.00001)) * 70}%`,
+      top: `${75 - ((stop.latitude - minLat) / Math.max(maxLat - minLat, 0.00001)) * 45}%`,
+    }
+  }
+  return <section className="day-map"><div className="map-header"><span className="eyebrow">Route preview</span><strong>Day {day.day}{day.date ? ` · ${formatTripDate(day.date)}` : ''} · {destination}</strong></div><div className="map-canvas">{stops.length ? <><div className="map-plot" aria-label={`Route through ${stops.length} stops`}>{stops.map((stop, index) => <span className="map-marker" style={positionFor(stop, index)} title={stop.place_query || stop.name} key={`${stop.name}-${index}`}>{index + 1}</span>)}</div><div className="map-route">{stops.map((stop, index) => <div className="map-stop" key={`${stop.name}-${index}`}><span>{index === 0 ? '✈' : '●'}</span><strong>{stop.name}</strong></div>)}</div></> : <p className="map-empty">No activities were returned for this day.</p>}<small>{origin} → {destination} · {stops.length} stops</small></div></section>
 }
 
 function App() {

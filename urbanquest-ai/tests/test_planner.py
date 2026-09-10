@@ -3,6 +3,7 @@ import unittest
 
 from app.chat.service import ChatService
 from app.maps.demo import DemoMapsProvider
+from app.maps.google import GoogleMapsProvider
 from app.planner.models import Location, TravelerContext
 from app.planner.service import AdventurePlanner
 
@@ -25,6 +26,8 @@ class PlannerTests(unittest.TestCase):
         )
 
         self.assertTrue(response.plan.stops)
+        self.assertTrue(response.plan.stops[0].place_query)
+        self.assertIsNotNone(response.plan.stops[0].latitude)
         self.assertLessEqual(response.plan.estimated_cost, context.budget_destination)
         self.assertLessEqual(response.plan.duration_minutes, context.available_minutes)
         self.assertEqual(response.plan.currency, "INR")
@@ -72,6 +75,49 @@ class PlannerTests(unittest.TestCase):
             ["2026-10-20", "2026-10-21", "2026-10-22"],
         )
         self.assertTrue(all(day.activities for day in response.plan.days))
+        self.assertEqual(
+            [experience.name for experience in response.plan.experience_bundle.experiences],
+            [stop.name for stop in response.plan.stops],
+        )
+
+    def test_preferences_change_generated_plan(self) -> None:
+        service = ChatService(AdventurePlanner(DemoMapsProvider()))
+        context = TravelerContext(
+            home=Location(country="USA", city="San Francisco"),
+            destination=Location(country="India", city="Hyderabad"),
+            home_currency="USD",
+            destination_currency="INR",
+            budget_home=100,
+            budget_destination=8700,
+            available_minutes=180,
+        )
+
+        history = asyncio.run(service.respond("Plan a historic trip", context)).plan
+        food = asyncio.run(service.respond("Plan a food trip", context)).plan
+
+        self.assertNotEqual(
+            [stop.name for stop in history.stops],
+            [stop.name for stop in food.stops],
+        )
+        self.assertEqual(food.trip_dna.food, 85)
+
+    def test_demo_resolves_place_query_without_inventing_coordinates(self) -> None:
+        place = asyncio.run(DemoMapsProvider().resolve_place("Charminar", "Hyderabad"))
+        self.assertEqual(place.place_query, "Charminar, Hyderabad")
+        self.assertEqual((place.latitude, place.longitude), (17.3616, 78.4747))
+
+    def test_google_route_maps_response_to_route(self) -> None:
+        provider = GoogleMapsProvider("test-key")
+
+        async def fake_request(url, payload, headers):
+            self.assertIn("computeRoutes", url)
+            self.assertEqual(payload["travelMode"], "WALK")
+            return {"routes": [{"distanceMeters": 1500, "duration": "180s"}]}
+
+        provider._request = fake_request
+        route = asyncio.run(provider.route((1, 2), (3, 4), "walking"))
+        self.assertEqual(route.distance_km, 1.5)
+        self.assertEqual(route.duration_minutes, 3)
 
 
 if __name__ == "__main__":

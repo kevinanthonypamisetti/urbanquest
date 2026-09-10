@@ -13,8 +13,10 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The service exposes `GET /`, `GET /health`, and `POST /chat`. The demo maps provider is
-deliberately deterministic so the service can run without external API keys.
+The service exposes `GET /`, `GET /health`, and `POST /chat`. Set `MAPS_PROVIDER=google`
+and `GOOGLE_MAPS_API_KEY` to resolve itinerary place queries and routes through Google
+Places/Routes. If the key is absent (or the provider is not selected), it explicitly
+falls back to the deterministic demo provider.
 
 ## Deployment walkthrough
 

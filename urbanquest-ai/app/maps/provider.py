@@ -5,6 +5,10 @@ from app.maps.models import Place, Route
 
 class MapsProvider(ABC):
     @abstractmethod
+    async def resolve_place(self, place_query: str, city: str) -> Place:
+        raise NotImplementedError
+
+    @abstractmethod
     async def nearby_places(
         self,
         latitude: float,

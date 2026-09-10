@@ -4,6 +4,7 @@ from app.maps.provider import MapsProvider
 
 DEMO_PLACES = [
     Place(
+        place_query="Charminar, Hyderabad",
         name="Charminar",
         description="A landmark four-century-old monument at the heart of Hyderabad.",
         latitude=17.3616,
@@ -16,6 +17,7 @@ DEMO_PLACES = [
         distance_km=0.8,
     ),
     Place(
+        place_query="Laad Bazaar, Hyderabad",
         name="Laad Bazaar",
         description="A lively lane of bangles, crafts, and local street life.",
         latitude=17.3612,
@@ -28,6 +30,7 @@ DEMO_PLACES = [
         distance_km=1.0,
     ),
     Place(
+        place_query="Nimrah Cafe, Hyderabad",
         name="Nimrah Cafe",
         description="A relaxed local stop for Irani chai and fresh Osmania biscuits.",
         latitude=17.3605,
@@ -40,6 +43,7 @@ DEMO_PLACES = [
         distance_km=0.9,
     ),
     Place(
+        place_query="Salar Jung Museum, Hyderabad",
         name="Salar Jung Museum",
         description="A broad collection of art and historic objects beside the Musi River.",
         latitude=17.3714,
@@ -55,6 +59,13 @@ DEMO_PLACES = [
 
 
 class DemoMapsProvider(MapsProvider):
+    async def resolve_place(self, place_query: str, city: str) -> Place:
+        normalized = place_query.lower()
+        for place in DEMO_PLACES:
+            if place.name.lower() in normalized:
+                return place
+        return (await self.nearby_places(0, 0, 5000, "culture", city))[0]
+
     async def nearby_places(
         self,
         latitude: float,
@@ -67,10 +78,9 @@ class DemoMapsProvider(MapsProvider):
         if city.lower() != "hyderabad":
             return [
                 Place(
+                    place_query=f"{city} {category.title()} Walk",
                     name=f"{city} {category.title()} Walk",
                     description=f"A locally minded {category} route through {city}.",
-                    latitude=0,
-                    longitude=0,
                     category=category,
                     estimated_cost=0,
                     duration_minutes=45,

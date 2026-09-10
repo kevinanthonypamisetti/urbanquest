@@ -1,11 +1,14 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class Place(BaseModel):
+    place_query: str
     name: str
     description: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     category: str
     estimated_cost: float = Field(ge=0)
     duration_minutes: int = Field(gt=0)
