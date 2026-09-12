@@ -3,7 +3,7 @@ import { ArrowDown, ArrowRight, BusFront, ChevronDown, CircleHelp, Compass, Cred
 import { getBookingOptions } from './bookingProviders'
 import './App.css'
 import { AuthPage } from './Auth'
-import { getStoredSession, signOut } from './supabase'
+import { getStoredSession, saveTrip, signOut } from './supabase'
 
 const today = new Date().toISOString().slice(0, 10)
 const defaultDeparture = '2026-10-20'
@@ -139,7 +139,9 @@ function PlannerApp() {
         }),
       })
       if (!response.ok) throw new Error('The concierge could not build a plan right now.')
-      setConciergeResponse(await response.json())
+      const result = await response.json()
+      await saveTrip(result.plan.title, result.plan)
+      setConciergeResponse(result)
     } catch (error) {
       setConciergeResponse(null)
       setConciergeError(error.message)
