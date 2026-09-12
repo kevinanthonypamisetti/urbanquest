@@ -53,6 +53,20 @@ the Render service, and set `VITE_AUTH_API_URL` in Vercel to the Render URL plus
 `/auth`. The sender domain must be verified in Resend; the default sender is only
 for development/testing.
 
+## Supabase frontend setup
+
+Create a Supabase project, then run [`supabase/schema.sql`](./supabase/schema.sql)
+in the SQL editor. Add the project URL and public anon key to Vercel:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-key
+```
+
+The planner is protected by Supabase Auth. Users must sign up or sign in before
+using the planner, and the chat agent uses the existing `/chat` API with the
+current trip context.
+
 ## Run the frontend
 
 ```bash

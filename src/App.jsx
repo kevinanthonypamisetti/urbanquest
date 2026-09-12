@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowRight, BusFront, ChevronDown, CircleHelp, Compass, CreditCard, LocateFixed, Map, Plane, Search, TrainFront, WalletCards } from 'lucide-react'
+import { ArrowDown, ArrowRight, BusFront, ChevronDown, CircleHelp, Compass, CreditCard, LocateFixed, LockKeyhole, Map, Plane, Search, TrainFront, WalletCards } from 'lucide-react'
 import { getBookingOptions } from './bookingProviders'
 import './App.css'
 import { AuthPage } from './Auth'
+import { getStoredSession, signOut } from './supabase'
 
 const today = new Date().toISOString().slice(0, 10)
 const defaultDeparture = '2026-10-20'
@@ -81,6 +82,7 @@ function App() {
 }
 
 function PlannerApp() {
+  const session = getStoredSession()
   const [cookieChoice, setCookieChoice] = useState(() => localStorage.getItem('urbanquest-cookie-choice'))
   const [origin, setOrigin] = useState({ country: 'USA', city: 'San Francisco' })
   const [destination, setDestination] = useState({ country: 'India', city: 'Hyderabad' })
@@ -105,6 +107,10 @@ function PlannerApp() {
     setConciergeResponse(null)
     setSelectedDay(1)
   }, [origin.country, origin.city, destination.country, destination.city, amount])
+
+  if (!session) {
+    return <main className="auth-required"><a className="auth-wordmark" href="/">urban<span>quest</span></a><section><span className="auth-kicker"><LockKeyhole size={15} /> Members only</span><h1>Your next adventure starts here.</h1><p>Sign in to use the planner, save trips, and chat with your UrbanQuest travel agent.</p><a className="auth-submit" href="/login">Sign in to continue <ArrowRight size={17} /></a></section></main>
+  }
 
   async function askConcierge(event) {
     event.preventDefault()
@@ -144,15 +150,42 @@ function PlannerApp() {
 
   return (
     <main className="app-shell">
-      <header className="topbar"><a className="wordmark" href="/">urban<span>quest</span></a><nav><a href="#planner">Trip planner</a><a href="#getting-there">Getting there</a><a href="/login">Sign in</a><a href="/signup">Join UrbanQuest</a><button className="icon-button" title="Help"><CircleHelp size={18} /></button></nav></header>
+      <header className="topbar"><a className="wordmark" href="/">urban<span>quest</span></a><nav><a href="#planner">Trip planner</a><a href="#getting-there">Getting there</a><span className="member-name">{session.user?.user_metadata?.name || session.user?.email}</span><button className="signout-button" onClick={() => { signOut(); window.location.assign('/login') }}>Sign out</button><button className="icon-button" title="Help"><CircleHelp size={18} /></button></nav></header>
       <section className="hero-section"><div className="hero-copy"><p className="kicker"><Compass size={15} /> A more considered way to travel</p><h1>Go somewhere.<br /><em>Do something.</em></h1><p className="intro">A city guide shaped around where you begin, what you carry, and the places worth taking the long way to.</p></div><div className="hero-image" role="img" aria-label="A quiet view of Hyderabad's Charminar at dusk" /></section>
       <section className="planner" id="planner"><div className="section-heading"><div><span className="section-number">01</span><h2>Set your bearings</h2></div><p>Tell us where you are, then we will make the distance useful.</p></div><div className="location-grid"><LocationPicker label="I'm from" value={origin} onChange={setOrigin} /><div className="route-mark"><ArrowDown size={18} /></div><LocationPicker label="I'm traveling to" value={destination} onChange={setDestination} /></div></section>
       <section className="money-section"><div className="money-intro"><span className="section-number">02</span><h2>What are you taking with you?</h2><p>See the buying power of your everyday budget in {destination.city}.</p></div><div className="money-grid"><div className="amount-panel"><label htmlFor="amount">I have</label><div className="amount-input"><span>{originPlace.symbol}</span><input id="amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))} /><span className="currency-code">{originPlace.currency}</span></div><div className="exchange-line"><ArrowRight size={14} /> 1 {originPlace.currency} ≈ {(destinationPlace.rate / originPlace.rate).toFixed(destinationPlace.rate < 2 ? 2 : 0)} {destinationPlace.currency}</div><div className="destination-total"><span>In {destination.city}</span><strong>{destinationPlace.symbol}{converted.toLocaleString()}</strong><small>{destinationPlace.currency} destination equivalent</small></div></div><div className="spend-panel"><div className="panel-title"><span>Here’s what that can mean</span><WalletCards size={17} /></div>{spend.map(([label, value]) => <div className="spend-row" key={label}><span>{label}</span><strong>{destinationPlace.symbol}{value.toLocaleString()}</strong></div>)}<div className="spend-row remaining"><span>Remaining</span><strong>{destinationPlace.symbol}{remaining.toLocaleString()}</strong></div><p className="budget-note">That is enough room for <b>3–5 micro-adventures</b> at an unhurried pace.</p></div></div><button className="primary-button" type="button" onClick={() => document.getElementById('getting-there').scrollIntoView({ behavior: 'smooth' })}>Explore {destination.city} <ArrowRight size={17} /></button></section>
       <section className="getting-there" id="getting-there"><div className="section-heading"><div><span className="section-number">03</span><h2>Getting there</h2></div><p>Plan the whole journey, from your first departure to your first good meal.</p></div><div className="journey-line"><div className="journey-stop"><LocateFixed size={16} /><span>{origin.city}</span></div><div className="journey-connector" /><div className="journey-stop"><Map size={16} /><span>{destination.city}</span></div></div><div className="transport-grid">{transport.map(({ icon: Icon, label, detail, meta }) => <button className={`transport-card ${activeTransport === label ? 'active' : ''}`} key={label} type="button" onClick={() => setActiveTransport(label)}><span className="transport-icon"><Icon size={20} /></span><span className="transport-copy"><b>{label}</b><small>{detail}</small></span><span className="transport-meta">{activeTransport === label ? 'Selected' : meta}<ArrowRight size={16} /></span></button>)}</div></section>
       <section className="concierge-section" id="concierge"><div className="section-heading"><div><span className="section-number">04</span><h2>Build your trip</h2></div><p>Choose dates and preferences. Duration is calculated automatically.</p></div><form className="concierge-form" onSubmit={askConcierge}><div className="date-range"><label>Departure<input type="date" min={today} value={tripOptions.departure} onChange={(event) => { setTripOptions({ ...tripOptions, departure: event.target.value, returnDate: tripOptions.returnDate < event.target.value ? event.target.value : tripOptions.returnDate }); setConciergeResponse(null); setSelectedDay(1) }} /></label><span>→</span><label>Return<input type="date" min={tripOptions.departure || today} value={tripOptions.returnDate} onChange={(event) => { setTripOptions({ ...tripOptions, returnDate: event.target.value }); setConciergeResponse(null); setSelectedDay(1) }} /></label><strong>{tripDays} {tripDays === 1 ? 'day' : 'days'}</strong></div><div className="trip-options">{[['travelers', 'Travelers', ['1', '2', '3', '4', '5']], ['style', 'Trip mood', ['Historic & local', 'Food & cafés', 'Art & hidden gems']], ['flight', 'Flights', ['Best value', 'Fastest route', 'Most comfortable']], ['stay', 'Where to stay', ['Boutique hotel', 'Central hotel', 'Best value stay']], ['food', 'What to eat', ['Local favourites', 'Street food', 'Vegetarian spots']], ['transport', 'Getting around', ['Walking + transit', 'Taxi + walking', 'Public transit']]].map(([key, label, options]) => <label className="trip-option" key={key}>{label}<select value={tripOptions[key]} onChange={(event) => { setTripOptions({ ...tripOptions, [key]: event.target.value }); setConciergeResponse(null) }}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div><div className="selected-budget"><span>Budget from section 02</span><strong>{originPlace.symbol}{Number(amount || 0).toLocaleString()} {originPlace.currency}</strong></div><button className="primary-button" type="submit" disabled={isPlanning}>{isPlanning ? 'Building your adventure…' : 'Build my adventure'} <ArrowRight size={17} /></button></form>{conciergeError && <p className="concierge-error" role="alert">{conciergeError}</p>}{conciergeResponse && <article className="concierge-result"><div className="concierge-result-heading"><div><span className="eyebrow">Your field notes</span><h3>{conciergeResponse.plan.title}</h3></div><span className="concierge-cost">{destinationPlace.symbol}{conciergeResponse.plan.estimated_cost.toLocaleString()} · {tripDays} days</span></div><p>{conciergeResponse.message}</p><div className="trip-summary"><span>✈ {tripOptions.flight}</span><span>⌂ {tripOptions.stay}</span><span>🍽 {tripOptions.food}</span><span>↗ {tripOptions.transport}</span></div><TripDNA dna={conciergeResponse.plan.trip_dna} /><section className="bundle-card"><span className="eyebrow">Experience system</span><h4>{conciergeResponse.plan.experience_bundle.title}</h4><p>{conciergeResponse.plan.experience_bundle.description}</p><div>{conciergeResponse.plan.experience_bundle.experiences.map((experience) => <span key={experience.name}>{experience.name}</span>)}</div></section><div className="day-tabs">{conciergeResponse.plan.days.map((day) => <button className={selectedDay === day.day ? 'active' : ''} type="button" key={day.day} onClick={() => setSelectedDay(day.day)}><strong>Day {day.day}</strong><span>{day.date ? formatTripDate(day.date) : 'Date pending'}</span></button>)}</div><div className="planner-preview"><div className="day-list">{selectedPlanDay && <section className="day-card"><div className="day-heading"><span>DAY {selectedPlanDay.day}{selectedPlanDay.date ? ` · ${formatTripDate(selectedPlanDay.date)}` : ''}</span><strong>{selectedPlanDay.title}</strong></div>{selectedPlanDay.meals?.length > 0 && <div className="meal-list"><span className="eyebrow">Meals planned</span>{selectedPlanDay.meals.map((meal) => <div className="meal-row" key={`${meal.meal}-${meal.name}`}><strong>{meal.meal}</strong><span>{meal.suggested_time} · {destinationPlace.symbol}{meal.estimated_cost.toLocaleString()}</span><small>{meal.name} · {meal.description}</small></div>)}</div>}{selectedPlanDay.activities.length ? selectedPlanDay.activities.map((stop) => <div className="concierge-stop" key={stop.name}><strong>{stop.name}</strong><span>{stop.duration_minutes} min · {destinationPlace.symbol}{stop.estimated_cost.toLocaleString()}</span><small>{stop.description}</small></div>) : <p className="day-placeholder">No activities were returned for this day.</p>}</section>}</div>{selectedPlanDay && <DayMap day={selectedPlanDay} destination={destination.city} origin={origin.city} />}</div><div className="booking-grid"><BookingGroup title="Flights" icon="✈" options={bookingOptions.flights} /><BookingGroup title="Hotels" icon="⌂" options={bookingOptions.hotels} /><BookingGroup title="Trains" icon="↔" options={bookingOptions.trains} /><BookingGroup title="Activities" icon="✦" options={bookingOptions.activities} /></div></article>}</section>
+      <ChatAgent origin={origin.city} destination={destination.city} />
       <footer><span>urbanquest / field notes for the curious</span><span><CreditCard size={15} /> Rates are indicative · cards welcome worldwide</span><Search size={17} /></footer>{!cookieChoice && <CookiePreferences onSave={(choice) => { localStorage.setItem('urbanquest-cookie-choice', choice); setCookieChoice(choice) }} />}
     </main>
   )
+}
+
+function ChatAgent({ origin, destination }) {
+  const [open, setOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState([{ role: 'agent', text: `Tell me what you want to do in ${destination}. I can shape the trip around your time, budget, and interests.` }])
+  const [loading, setLoading] = useState(false)
+  async function send(event) {
+    event.preventDefault()
+    if (!message.trim() || loading) return
+    const question = message.trim()
+    setMessage('')
+    setMessages((items) => [...items, { role: 'user', text: question }])
+    setLoading(true)
+    try {
+      const response = await fetch(import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: question, context: { home: { country: 'Unknown', city: origin }, destination: { country: 'Unknown', city: destination }, home_currency: 'USD', destination_currency: 'USD', budget_home: 0, budget_destination: 0, available_minutes: 180 } }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.detail || 'The travel agent is unavailable.')
+      setMessages((items) => [...items, { role: 'agent', text: result.message || result.plan?.title || 'I found a few ideas for your trip.' }])
+    } catch (error) {
+      setMessages((items) => [...items, { role: 'agent', text: error.message }])
+    } finally {
+      setLoading(false)
+    }
+  }
+  return <aside className={`chat-agent ${open ? 'open' : ''}`}><button className="chat-toggle" onClick={() => setOpen(!open)}><span>✦</span> {open ? 'Close travel agent' : 'Chat with your travel agent'}</button>{open && <div className="chat-panel"><div className="chat-messages">{messages.map((item, index) => <p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{loading && <p className="agent">Thinking…</p>}</div><form onSubmit={send}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Ask about your trip…" /><button aria-label="Send message">→</button></form></div>}</aside>
 }
 
 function CookiePreferences({ onSave }) {

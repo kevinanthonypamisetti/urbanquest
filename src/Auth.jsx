@@ -1,70 +1,32 @@
-import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Mail, Phone, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
+import { signIn, signUp, supabaseConfigured } from './supabase'
 import './auth.css'
 
-const API_URL = import.meta.env.VITE_AUTH_API_URL || (import.meta.env.VITE_AI_API_URL
-  ? import.meta.env.VITE_AI_API_URL.replace(/\/chat\/?$/, '/auth')
-  : 'http://localhost:8000/auth')
-
 export function AuthPage({ mode = 'login' }) {
-  const [step, setStep] = useState('start')
-  const [method, setMethod] = useState('email')
-  const [destination, setDestination] = useState('')
-  const [name, setName] = useState('')
-  const [code, setCode] = useState('')
-  const [consent, setConsent] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [seconds, setSeconds] = useState(0)
   const isSignup = mode === 'signup'
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    if (!seconds) return undefined
-    const timer = window.setInterval(() => setSeconds((value) => value - 1), 1000)
-    return () => window.clearInterval(timer)
-  }, [seconds])
-
-  async function requestCode(event) {
+  async function submit(event) {
     event.preventDefault()
     setError('')
-    if (isSignup && !consent) {
-      setError('Please agree to the terms and privacy policy to continue.')
-      return
-    }
+    setSuccess('')
     setLoading(true)
     try {
-      const response = await fetch(`${API_URL}/request-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method, destination, name: name || null, consent: isSignup ? consent : true }),
-      })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.detail || 'We could not send your code.')
-      setStep('verify')
-      setSeconds(60)
+      const result = isSignup ? await signUp({ name, email, password }) : await signIn(email, password)
+      if (isSignup && !result.access_token) {
+        setSuccess('Check your email to confirm your account, then sign in.')
+        return
+      }
+      window.location.assign('/')
     } catch (requestError) {
       setError(requestError.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function verifyCode(event) {
-    event.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const response = await fetch(`${API_URL}/verify`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method, destination, name: name || null, code }),
-      })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.detail || 'That code is not valid.')
-      window.location.assign('/')
-    } catch (verifyError) {
-      setError(verifyError.message)
     } finally {
       setLoading(false)
     }
@@ -73,27 +35,20 @@ export function AuthPage({ mode = 'login' }) {
   return <main className="auth-shell">
     <a className="auth-wordmark" href="/">urban<span>quest</span></a>
     <section className="auth-card">
-      <div className="auth-card-top"><span className="auth-kicker"><ShieldCheck size={15} /> Secure access</span><span className="auth-step">{step === 'verify' ? '02' : '01'} / 02</span></div>
-      {step === 'start' ? <form onSubmit={requestCode}>
-        <h1>{isSignup ? 'Make room for more.' : 'Welcome back.'}</h1>
-        <p className="auth-intro">{isSignup ? 'Create your UrbanQuest account and keep every field note in one place.' : 'Sign in to pick up where your next adventure left off.'}</p>
-        <a className="google-button" href={`${API_URL}/google`}>Continue with Google <ArrowRight size={17} /></a>
-        <div className="auth-divider"><span>or use a code</span></div>
-        {isSignup && <label className="auth-field">Your name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Alex Morgan" required /></label>}
-        <div className="auth-methods"><button type="button" className={method === 'email' ? 'selected' : ''} onClick={() => setMethod('email')}><Mail size={17} /> Email</button><button type="button" className={method === 'mobile' ? 'selected' : ''} onClick={() => setMethod('mobile')}><Phone size={17} /> Mobile</button></div>
-        <label className="auth-field">{method === 'email' ? 'Email address' : 'Mobile number'}<input type={method === 'email' ? 'email' : 'tel'} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder={method === 'email' ? 'you@example.com' : '+1 555 123 4567'} required /></label>
-        {isSignup && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>I agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.</span></label>}
-        <button className="auth-submit" disabled={loading}>{loading ? 'Sending code…' : 'Continue'} <ArrowRight size={17} /></button>
-        <p className="auth-switch">{isSignup ? 'Already have an account?' : 'New to UrbanQuest?'} <a href={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Create one'}</a></p>
-      </form> : <form onSubmit={verifyCode}>
-        <button className="auth-back" type="button" onClick={() => { setStep('start'); setCode(''); setError('') }}><ArrowLeft size={15} /> Change {method === 'email' ? 'email' : 'number'}</button>
-        <h1>Verify your account</h1><p className="auth-intro">We’ve sent a 6-digit code to<br /><strong>{destination}</strong></p>
-        <label className="auth-field">Verification code<input className="otp-input" inputMode="numeric" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder="______" autoFocus required /></label>
-        <p className="auth-resend">Didn't receive it? {seconds ? <span>Resend in 00:{String(seconds).padStart(2, '0')}</span> : <button type="button" onClick={requestCode}>Resend code</button>}</p>
-        <button className="auth-submit" disabled={loading || code.length !== 6}>{loading ? 'Verifying…' : 'Verify'} <Check size={17} /></button>
-      </form>}
+      <span className="auth-kicker"><LockKeyhole size={15} /> Your private field notes</span>
+      <h1>{isSignup ? 'Start wandering.' : 'Welcome back.'}</h1>
+      <p className="auth-intro">{isSignup ? 'Create an account to save trips, preferences, and conversations with your travel agent.' : 'Sign in to return to your saved trips and travel plans.'}</p>
+      {!supabaseConfigured && <p className="auth-error">Supabase is not configured. Add the Vercel variables before using authentication.</p>}
+      <form onSubmit={submit}>
+        {isSignup && <label className="auth-field"><span><UserRound size={14} /> Full name</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Alex Morgan" required /></label>}
+        <label className="auth-field"><span><Mail size={14} /> Email address</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></label>
+        <label className="auth-field"><span><LockKeyhole size={14} /> Password</span><div className="password-input"><input type={showPassword ? 'text' : 'password'} minLength="8" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></label>
+        <button className="auth-submit" disabled={loading || !supabaseConfigured}>{loading ? 'Opening your notebook…' : isSignup ? 'Create account' : 'Sign in'} <ArrowRight size={17} /></button>
+      </form>
       {error && <p className="auth-error" role="alert">{error}</p>}
+      {success && <p className="auth-success" role="status">{success}</p>}
+      <p className="auth-switch">{isSignup ? 'Already have an account?' : 'New to UrbanQuest?'} <a href={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Create one'}</a></p>
     </section>
-    <p className="auth-footnote">Your session is protected with a secure, HttpOnly cookie.</p>
+    <p className="auth-footnote">Your account and saved trips are secured by Supabase Auth.</p>
   </main>
 }
