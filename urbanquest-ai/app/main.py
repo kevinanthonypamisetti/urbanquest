@@ -7,13 +7,14 @@ from app.config import get_settings
 from app.maps.demo import DemoMapsProvider
 from app.maps.google import GoogleMapsProvider
 from app.planner.service import AdventurePlanner
+from app.auth import router as auth_router
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
@@ -23,6 +24,7 @@ maps_provider = (
     else DemoMapsProvider()
 )
 chat_service = ChatService(AdventurePlanner(maps_provider=maps_provider, max_candidates=settings.max_candidates))
+app.include_router(auth_router)
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

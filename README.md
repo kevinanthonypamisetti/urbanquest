@@ -32,6 +32,17 @@ The repository includes [`render.yaml`](./render.yaml) for the Python API.
 The current deployment uses the deterministic demo maps provider. Real map
 providers should be added only after their server-side API keys are configured.
 
+## Authentication
+
+The frontend exposes `/login` and `/signup` with Google OAuth and email/mobile
+OTP entry points. The FastAPI service exposes `/auth/request-code`, `/auth/verify`,
+`/auth/me`, `/auth/logout`, and `/auth/google`. Configure `DATABASE_URL`,
+`GOOGLE_OAUTH_URL`, and an OTP delivery provider before production deployment.
+The PostgreSQL baseline schema is in [`urbanquest-ai/schema.sql`](./urbanquest-ai/schema.sql).
+During local development, `DEVELOPMENT_OTP=123456` is accepted by the verification
+endpoint. Production sessions use an HttpOnly, SameSite=Lax cookie and never store
+passwords or plaintext OTPs.
+
 ## Run the frontend
 
 ```bash

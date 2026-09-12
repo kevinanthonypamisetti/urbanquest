@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     google_maps_api_key: Optional[str] = None
     max_candidates: int = 8
     cors_origins: str = "http://localhost:5173"
+    database_url: Optional[str] = None
+    environment: str = "development"
+    development_otp: str = "123456"
+    session_days: int = 30
+    google_oauth_url: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
