@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Mail, Phone, ShieldCheck } from 'lucide-react'
 import './auth.css'
 
-const API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/auth'
+const API_URL = import.meta.env.VITE_AUTH_API_URL || (import.meta.env.VITE_AI_API_URL
+  ? import.meta.env.VITE_AI_API_URL.replace(/\/chat\/?$/, '/auth')
+  : 'http://localhost:8000/auth')
 
 export function AuthPage({ mode = 'login' }) {
   const [step, setStep] = useState('start')
@@ -36,7 +38,7 @@ export function AuthPage({ mode = 'login' }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method, destination, name: name || null, consent: isSignup ? consent : true }),
       })
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.detail || 'We could not send your code.')
       setStep('verify')
       setSeconds(60)
@@ -58,7 +60,7 @@ export function AuthPage({ mode = 'login' }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method, destination, name: name || null, code }),
       })
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.detail || 'That code is not valid.')
       window.location.assign('/')
     } catch (verifyError) {

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import asyncio
+import json
 import secrets
+from urllib.request import Request as UrlRequest, urlopen
 from datetime import datetime, timedelta, timezone
 from typing import Literal
+from urllib.error import HTTPError, URLError
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
@@ -70,13 +74,44 @@ async def request_code(payload: AuthRequest) -> dict[str, str]:
     if not payload.consent:
         raise HTTPException(status_code=422, detail="Consent is required to create an account.")
     code = settings.development_otp if settings.environment != "production" else f"{secrets.randbelow(1_000_000):06d}"
+    if payload.method == "email" and settings.environment == "production":
+        if not settings.resend_api_key:
+            raise HTTPException(status_code=503, detail="Email delivery is not configured.")
+        await _send_email_otp(payload.destination, code)
     _pending_otps[payload.destination] = (_hash(code), datetime.now(timezone.utc) + timedelta(minutes=10))
-    # Delivery adapters can be attached here without exposing OTPs to clients.
     return {
         "status": "sent",
         "destination": payload.destination,
         "expires_in": "600",
     }
+
+
+async def _send_email_otp(destination: str, code: str) -> None:
+    body = json.dumps({
+        "from": settings.auth_from_email,
+        "to": [destination],
+        "subject": "Your UrbanQuest verification code",
+        "html": f"<p>Your UrbanQuest verification code is <strong>{code}</strong>.</p><p>It expires in 10 minutes.</p>",
+    }).encode("utf-8")
+
+    def send() -> None:
+        request = UrlRequest(
+            "https://api.resend.com/emails",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {settings.resend_api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urlopen(request, timeout=10) as response:
+            if response.status >= 300:
+                raise RuntimeError(f"Resend returned HTTP {response.status}.")
+
+    try:
+        await asyncio.to_thread(send)
+    except (HTTPError, URLError, TimeoutError, OSError) as error:
+        raise HTTPException(status_code=502, detail="Email delivery failed. Please try again.") from error
 
 
 @router.get("/google")

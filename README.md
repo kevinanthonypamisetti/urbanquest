@@ -43,6 +43,11 @@ During local development, `DEVELOPMENT_OTP=123456` is accepted by the verificati
 endpoint. Production sessions use an HttpOnly, SameSite=Lax cookie and never store
 passwords or plaintext OTPs.
 
+For production email OTP delivery, set `RESEND_API_KEY` and `AUTH_FROM_EMAIL` on
+the Render service, and set `VITE_AUTH_API_URL` in Vercel to the Render URL plus
+`/auth`. The sender domain must be verified in Resend; the default sender is only
+for development/testing.
+
 ## Run the frontend
 
 ```bash
