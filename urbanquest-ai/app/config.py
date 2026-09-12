@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     development_otp: str = "123456"
     session_days: int = 30
     google_oauth_url: Optional[str] = None
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+    google_redirect_uri: Optional[str] = None
+    frontend_url: str = "http://localhost:5173"
     resend_api_key: Optional[str] = None
     auth_from_email: str = "UrbanQuest <onboarding@resend.dev>"
 

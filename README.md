@@ -43,6 +43,11 @@ During local development, `DEVELOPMENT_OTP=123456` is accepted by the verificati
 endpoint. Production sessions use an HttpOnly, SameSite=Lax cookie and never store
 passwords or plaintext OTPs.
 
+For Google sign-in, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GOOGLE_REDIRECT_URI` (for example `https://your-render-service.onrender.com/auth/google/callback`),
+and `FRONTEND_URL` on Render. Add the same callback URL to the Google Cloud OAuth
+client's authorized redirect URIs.
+
 For production email OTP delivery, set `RESEND_API_KEY` and `AUTH_FROM_EMAIL` on
 the Render service, and set `VITE_AUTH_API_URL` in Vercel to the Render URL plus
 `/auth`. The sender domain must be verified in Resend; the default sender is only
