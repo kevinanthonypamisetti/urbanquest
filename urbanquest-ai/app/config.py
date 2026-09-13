@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     max_output_tokens: int = 1200
     max_history_messages: int = 12
     free_daily_ai_requests: int = 20
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

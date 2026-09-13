@@ -5,3 +5,4 @@ uvicorn[standard]>=0.30,<1
 psycopg[binary]>=3.2,<4
 python-multipart>=0.0.9,<1
 email-validator>=2.2,<3
+openai>=1.50,<2

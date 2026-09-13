@@ -10,6 +10,18 @@ class ChatMessage(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
 
 
+class ExtractedTripState(BaseModel):
+    origin: str | None = None
+    destination: str | None = None
+    departure_date: str | None = None
+    return_date: str | None = None
+    travelers: int | None = None
+    budget: float | None = None
+    preferences: list[str] = Field(default_factory=list)
+    requested_services: list[str] = Field(default_factory=list)
+    intent: list[str] = Field(default_factory=list)
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     context: TravelerContext

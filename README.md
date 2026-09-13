@@ -72,6 +72,13 @@ messages, rejects oversized requests, returns structured action proposals, and
 limits anonymous/free usage to 20 requests per day. Run the additional AI
 tables in `supabase/schema.sql` before wiring persistent conversation storage.
 
+When `OPENAI_API_KEY` is configured on Render, the gateway uses the UrbanQuest
+system prompt to extract the latest trip state, normalize ISO dates, detect
+requested services, and override stale origin/destination details. Without the
+key it intentionally falls back to the deterministic planner. Live flight,
+hotel, and availability tools still require provider integrations before the
+assistant can claim real search results.
+
 ## Run the frontend
 
 ```bash
