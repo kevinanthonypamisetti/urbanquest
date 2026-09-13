@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     resend_api_key: Optional[str] = None
     auth_from_email: str = "UrbanQuest <onboarding@resend.dev>"
+    max_input_tokens: int = 6000
+    max_output_tokens: int = 1200
+    max_history_messages: int = 12
+    free_daily_ai_requests: int = 20
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

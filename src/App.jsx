@@ -177,7 +177,9 @@ function ChatAgent({ origin, destination }) {
     setMessages((items) => [...items, { role: 'user', text: question }])
     setLoading(true)
     try {
-      const response = await fetch(import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: question, context: { home: { country: 'Unknown', city: origin }, destination: { country: 'Unknown', city: destination }, home_currency: 'USD', destination_currency: 'USD', budget_home: 0, budget_destination: 0, available_minutes: 180 } }) })
+      const apiUrl = import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/chat'
+      const gatewayUrl = apiUrl.replace(/\/chat\/?$/, '/api/ai/chat')
+      const response = await fetch(gatewayUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: question, user_id: getStoredSession()?.user?.id, context: { home: { country: 'Unknown', city: origin }, destination: { country: 'Unknown', city: destination }, home_currency: 'USD', destination_currency: 'USD', budget_home: 0, budget_destination: 0, available_minutes: 180 }, history: messages.map((item) => ({ role: item.role === 'agent' ? 'assistant' : 'user', content: item.text })) }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'The travel agent is unavailable.')
       setMessages((items) => [...items, { role: 'agent', text: result.message || result.plan?.title || 'I found a few ideas for your trip.' }])

@@ -1,6 +1,6 @@
 import re
 
-from app.chat.models import ChatResponse
+from app.chat.models import ChatResponse, TokenUsage
 from app.planner.models import PlannerIntent, TravelerContext
 from app.planner.service import AdventurePlanner
 
@@ -9,16 +9,30 @@ class ChatService:
     def __init__(self, planner: AdventurePlanner) -> None:
         self.planner = planner
 
-    async def respond(self, message: str, context: TravelerContext) -> ChatResponse:
+    async def respond(self, message: str, context: TravelerContext, history: list[object] | None = None) -> ChatResponse:
         intent = self.extract_intent(message)
         plan = await self.planner.create_plan(context=context, intent=intent)
+        input_tokens = self.estimate_tokens(message, history or [])
+        output_tokens = min(1200, self.estimate_tokens(plan.title, []))
         return ChatResponse(
             message=(
                 f"I found a {intent.category} adventure in "
                 f"{context.destination.city} that fits your time and budget."
             ),
             plan=plan,
+            usage=TokenUsage(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=input_tokens + output_tokens,
+            ),
         )
+
+    @staticmethod
+    def estimate_tokens(text: str, history: list[object]) -> int:
+        history_text = " ".join(
+            getattr(item, "content", "") for item in history
+        )
+        return max(1, (len(f"{text} {history_text}") + 3) // 4)
 
     @staticmethod
     def extract_intent(message: str) -> PlannerIntent:

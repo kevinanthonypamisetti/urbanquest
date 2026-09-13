@@ -67,6 +67,11 @@ The planner is protected by Supabase Auth. Users must sign up or sign in before
 using the planner, and the chat agent uses the existing `/chat` API with the
 current trip context.
 
+The AI gateway is available at `POST /api/ai/chat`. It bounds history to 12
+messages, rejects oversized requests, returns structured action proposals, and
+limits anonymous/free usage to 20 requests per day. Run the additional AI
+tables in `supabase/schema.sql` before wiring persistent conversation storage.
+
 ## Run the frontend
 
 ```bash

@@ -8,6 +8,7 @@ from app.maps.demo import DemoMapsProvider
 from app.maps.google import GoogleMapsProvider
 from app.planner.service import AdventurePlanner
 from app.auth import router as auth_router
+from app.ai_gateway import configure as configure_ai, router as ai_router
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
@@ -24,7 +25,9 @@ maps_provider = (
     else DemoMapsProvider()
 )
 chat_service = ChatService(AdventurePlanner(maps_provider=maps_provider, max_candidates=settings.max_candidates))
+configure_ai(chat_service)
 app.include_router(auth_router)
+app.include_router(ai_router)
 
 
 @app.api_route("/", methods=["GET", "HEAD"])
