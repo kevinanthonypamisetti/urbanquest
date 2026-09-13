@@ -24,7 +24,7 @@ class ExtractedTripState(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
-    context: TravelerContext
+    context: TravelerContext | None = None
     trip_id: str | None = Field(default=None, max_length=100)
     user_id: str | None = Field(default=None, max_length=100)
     history: list[ChatMessage] = Field(default_factory=list)

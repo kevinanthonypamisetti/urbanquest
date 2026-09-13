@@ -9,8 +9,10 @@ class Settings(BaseSettings):
     maps_provider: str = "demo"
     google_maps_api_key: Optional[str] = None
     max_candidates: int = 8
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,https://urbanquest-jade.vercel.app"
     database_url: Optional[str] = None
+    supabase_url: Optional[str] = None
+    supabase_anon_key: Optional[str] = None
     environment: str = "development"
     development_otp: str = "123456"
     session_days: int = 30

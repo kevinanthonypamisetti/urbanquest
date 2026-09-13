@@ -177,11 +177,14 @@ function ChatAgent({ origin, destination }) {
     setMessages((items) => [...items, { role: 'user', text: question }])
     setLoading(true)
     try {
-      const apiUrl = import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/chat'
-      const gatewayUrl = apiUrl.replace(/\/chat\/?$/, '/api/ai/chat')
-      const response = await fetch(gatewayUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: question, user_id: getStoredSession()?.user?.id, context: { home: { country: 'Unknown', city: origin }, destination: { country: 'Unknown', city: destination }, home_currency: 'USD', destination_currency: 'USD', budget_home: 0, budget_destination: 0, available_minutes: 180 }, history: messages.map((item) => ({ role: item.role === 'agent' ? 'assistant' : 'user', content: item.text })) }) })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.detail || 'The travel agent is unavailable.')
+      const session = getStoredSession()
+      const gatewayUrl = import.meta.env.VITE_AI_BACKEND_URL || (import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/chat').replace(/\/chat\/?$/, '/api/ai/chat')
+      const response = await fetch(gatewayUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ message: question, user_id: session?.user?.id, context: { home: { country: 'Unknown', city: origin }, destination: { country: 'Unknown', city: destination }, home_currency: 'USD', destination_currency: 'USD', budget_home: 0, budget_destination: 0, available_minutes: 180 }, history: messages.map((item) => ({ role: item.role === 'agent' ? 'assistant' : 'user', content: item.text })) }) })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        const detail = result.error?.message || result.detail || (response.status === 401 ? 'Authentication expired. Please sign in again.' : response.status === 429 ? 'Daily AI request limit reached.' : 'AI service temporarily unavailable.')
+        throw new Error(detail)
+      }
       setMessages((items) => [...items, { role: 'agent', text: result.message || result.plan?.title || 'I found a few ideas for your trip.' }])
     } catch (error) {
       setMessages((items) => [...items, { role: 'agent', text: error.message }])

@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.chat.models import ChatRequest, ChatResponse
@@ -12,12 +13,27 @@ from app.ai_gateway import configure as configure_ai, router as ai_router
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
+
+
+@app.exception_handler(Exception)
+async def unhandled_error(request: Request, error: Exception) -> JSONResponse:
+    print(f"Unhandled request error on {request.url.path}: {error}")
+    return JSONResponse(
+        status_code=503,
+        content={
+            "success": False,
+            "error": {
+                "code": "AI_SERVICE_UNAVAILABLE",
+                "message": "Travel planning service is temporarily unavailable.",
+            },
+        },
+    )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 maps_provider = (
     GoogleMapsProvider(settings.google_maps_api_key)
@@ -42,7 +58,7 @@ async def root() -> dict[str, str]:
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "service": "urbanquest-ai"}
 
 
 @app.post("/chat", response_model=ChatResponse)

@@ -12,6 +12,10 @@ services:
       - key: MAX_CANDIDATES
         value: "8"
       - key: CORS_ORIGINS
+        value: https://urbanquest-jade.vercel.app
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
         sync: false
       - key: RESEND_API_KEY
         sync: false
